@@ -4,12 +4,13 @@ def model
 	{
 		id(type = String)
 		name(type = String)
+		address(type = String)
 	}
 	
 	def UserOnline 
 	{
 		id(type = String)
-		name(type = String)
-		age(type = String)
+		userId(type = String)
+		lasttime(type = String)
 	}
 }
