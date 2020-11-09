@@ -1,0 +1,136 @@
+options
+{
+  STATIC = false;
+  IGNORE_CASE = false;
+}
+
+PARSER_BEGIN(Easycode)
+package github.com.hicaosen;
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.FieldAccess;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.PackageDeclaration;
+import org.eclipse.jdt.core.dom.QualifiedName;
+import org.eclipse.jdt.core.dom.ReturnStatement;
+import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.ThisExpression;
+import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.core.dom.SimpleType;
+
+public class Easycode
+{
+  public static void main(String args []) throws ParseException
+  {
+    Easycode parser = new Easycode(Easycode.class.getResourceAsStream("./user.ef"));
+    AST ast = AST.newAST(AST.JLS8);
+    CompilationUnit compilationUnit = ast.newCompilationUnit();
+    parser.parse(ast, compilationUnit);
+    System.out.println(compilationUnit);
+  }
+}
+
+PARSER_END(Easycode)
+
+SKIP :
+{
+  " "
+| "\n"
+| "\r"
+| "\t"
+}
+
+TOKEN :
+{
+  < PACKAGE : "package" >
+| < DEF : "def" >
+| < MODEL : "model" >
+| < DAO : "dao" >
+| < SERVICE : "service" >
+| < EXPORT : "export" >
+| < IDENTIFIER : [ "a"-"z", "A"-"Z" ] ([ "a"-"z", "A"-"Z", "0"-"9", "_" ])* >
+}
+
+TOKEN :
+{
+  < NUMBER : ([ "0"-"9" ])+ >
+}
+
+TOKEN :
+{
+  < LBRACE : "{" >
+| < RBRACE : "}" >
+}
+
+void parse(AST ast, CompilationUnit compilationUnit) :
+{
+}
+{
+  (
+    model_def(ast, compilationUnit)
+  )*
+  < EOF >
+}
+
+void model_def(AST ast, CompilationUnit compilationUnit) :
+{
+  Token model;
+  TypeDeclaration typeDeclaration;
+  FieldDeclaration fieldDeclaration;
+}
+{
+  < DEF > < MODEL > < LBRACE >
+  (
+    < DEF > model = < IDENTIFIER >
+    {
+      typeDeclaration = ast.newTypeDeclaration();
+      typeDeclaration.setName(ast.newSimpleName(model.image));
+      typeDeclaration.setInterface(false);
+    }
+    < LBRACE >
+    (
+      fieldDeclaration = field_def(ast)
+      {
+        typeDeclaration.bodyDeclarations().add(fieldDeclaration);
+      }
+    )*
+    < RBRACE >
+    {
+      typeDeclaration.modifiers().add(ast.newModifier(Modifier.ModifierKeyword.PUBLIC_KEYWORD));
+      compilationUnit.types().add(typeDeclaration);
+    }
+  )*
+  < RBRACE >
+}
+
+FieldDeclaration field_def(AST ast) :
+{
+  Token token;
+  SimpleType simpleType;
+}
+{
+  token = < IDENTIFIER > "(" simpleType = field_params_def(ast) ")"
+  {
+    VariableDeclarationFragment variable = ast.newVariableDeclarationFragment();
+    variable.setName(ast.newSimpleName(token.image));
+    FieldDeclaration field = ast.newFieldDeclaration(variable);
+    field.modifiers().add(ast.newModifier(Modifier.ModifierKeyword.PRIVATE_KEYWORD));
+    field.setType(simpleType);
+    return field;
+  }
+}
+
+SimpleType field_params_def(AST ast) :
+{
+  Token val;
+}
+{
+  < IDENTIFIER > "=" val = < IDENTIFIER >
+  {
+    return ast.newSimpleType(ast.newName(val.image));
+  }
+}

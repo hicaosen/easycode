@@ -1,0 +1,15 @@
+def model
+{
+	def User 
+	{
+		id(type = String)
+		name(type = String)
+	}
+	
+	def UserOnline 
+	{
+		id(type = String)
+		name(type = String)
+		age(type = String)
+	}
+}
